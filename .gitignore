@@ -4,4 +4,5 @@ _misc
 .local
 _publications/jors/build
 .gcloudignore
-_app/env_variables.yaml
+_apps/data/env_variables.yaml
+_apps/box/box_1014649_8cey4yzd_config.json
