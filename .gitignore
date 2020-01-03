@@ -5,4 +5,5 @@ _misc
 _publications/jors/build
 .gcloudignore
 _apps/data/env_variables.yaml
-_apps/box/box_1014649_8cey4yzd_config.json
+_apps/box/1014649_e91k0tua_config.json
+_apps/box/cert.pem

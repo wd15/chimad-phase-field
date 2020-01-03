@@ -21,6 +21,7 @@ in
       pylint
       flake8
       pytest
+      keyring
     ];
 
     shellHook = ''
@@ -35,5 +36,6 @@ in
 
       pip install --user boxsdk
       pip install --user "boxsdk[jwt]"
+      pip install --user "python-multipart"
     '';
   }
