@@ -1,37 +1,26 @@
-# curl http://localhost:8000/files/ -X POST -H "Content-Type: application/json" -d @./test.data
-#
-# Also try:
-#
-#   curl -X "POST" -F "fileb=@./shell.nix" http://localhost:8000/files/?uuid=$(uuidgen)
-#
-# Todo:
-#
-#  - enable file upload and write to box with unique ID
-#  - functionalize code
-#  - lint
-#  - set up test cases
-#  - test on heroku
+"""Run this with
 
+    $ uvicorn main:app --reload
 
-from boxsdk import OAuth2, Client
-from fastapi import FastAPI
-from fastapi import FastAPI
-import requests
-from toolz.curried import curry, get, compose, get_in, juxt, identity
-from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import StreamingResponse
-from pydantic import BaseModel, UrlStr
-from fastapi import FastAPI, File, Form, UploadFile, Query
-from boxsdk import JWTAuth
+Test with
+
+  curl -X "POST" -F "fileb=@./shell.nix" http://localhost:8000/files/?uuid=$(uuidgen)
+
+Todo:
+
+ - set up test cases
+ - test on heroku
+"""
+
 import json
 from uuid import UUID
-import uuid
-# from fn import sequence, perform_readjson, DataEffect, get_data
-# from effect import TypeDispatcher, sync_perform
+from toolz.curried import curry, get, compose, get_in, juxt, identity
+from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, UploadFile
+from boxsdk import JWTAuth, Client
 
 
-
-CONFIG_FILE = '1014649_e91k0tua_config.json'
+CONFIG_FILE = "1014649_e91k0tua_config.json"
 
 
 def sequence(*args):
@@ -48,36 +37,62 @@ def sequence(*args):
     return compose(*args[::-1])
 
 
-def get_auth(settings, data, appAuth):
+def get_auth(settings, data, app_auth):
+    """Geneate the JWTAuth object
+
+    Args:
+      settings: the boxAppSettings key from config data
+      data: all config data
+      app_auth: the appAuth key from the settings config data
+
+    Returns:
+      a JWTAuth object
+    """
     return JWTAuth(
-        client_id=settings['clientID'],
-        client_secret=settings['clientSecret'],
-        enterprise_id=data['enterpriseID'],
-        jwt_key_id=appAuth['publicKeyID'],
-        rsa_private_key_file_sys_path='./cert.pem',
-        rsa_private_key_passphrase=appAuth['passphrase']
+        client_id=settings["clientID"],
+        client_secret=settings["clientSecret"],
+        enterprise_id=data["enterpriseID"],
+        jwt_key_id=app_auth["publicKeyID"],
+        rsa_private_key_file_sys_path="./cert.pem",
+        rsa_private_key_passphrase=app_auth["passphrase"]
     )
 
 
 def get_json(filename):
+    """Read a JSON file
+
+    Args:
+      filename: the JSON filename
+
+    Returns:
+      the data as a dictionary
+    """
     with open(filename) as file_stream:
         return json.load(file_stream)
 
 
 @curry
 def upload_to_box(upload_file, folder_name, config_file):
+    """Upload a file to box
+
+    Args:
+      upload_file: an UploadFile object
+      folder_name: the folder to dump the file to
+      config_file: the config file used to authenticate
+
+    Returns:
+      the box file ID and the download URL
+
+    """
     return sequence(
         get_json,
-        juxt(get('boxAppSettings'), identity, get_in(['boxAppSettings', 'appAuth'])),
+        juxt(get("boxAppSettings"), identity, get_in(["boxAppSettings", "appAuth"])),
         lambda x: get_auth(*x),
         Client,
-        lambda x: x.folder(folder_id='0'),
+        lambda x: x.folder(folder_id="0"),
         lambda x: x.create_subfolder(folder_name),
         lambda x: x.upload_stream(upload_file.file, upload_file.filename),
-        lambda x: dict(
-            file_id=x.id,
-            download_link=x.get_download_url()
-        )
+        lambda x: dict(file_id=x.id, download_link=x.get_download_url()),
     )(config_file)
 
 
@@ -100,11 +115,14 @@ APP.add_middleware(
 
 
 @APP.post("/files/")
-async def create_file_on_box(uuid: UUID, fileb: UploadFile = File(...)):
-    return upload_to_box(fileb, str(uuid), CONFIG_FILE)
+async def create_file_on_box(uuid_: UUID, fileb: UploadFile = File(...)):
+    """End point to upload files to box
+    """
+    return upload_to_box(fileb, str(uuid_), CONFIG_FILE)
 
 
 if __name__ == "__main__":
     # run with python main.py to debug
     import uvicorn
+
     uvicorn.run(APP, host="0.0.0.0", port=8000)
