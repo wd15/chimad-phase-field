@@ -4,7 +4,7 @@
 
 Test with
 
-  curl -X "POST" -F "fileb=@./shell.nix" http://localhost:8000/files/?uuid=$(uuidgen)
+  curl -X "POST" -F "fileb=@./shell.nix" http://localhost:8000/upload/?uid=$(uuidgen)
 
 Todo:
 
@@ -37,7 +37,7 @@ def sequence(*args):
     return compose(*args[::-1])
 
 
-def get_auth(settings, data, app_auth):
+def get_auth(settings: dict, data: dict, app_auth: dict) -> JWTAuth:
     """Geneate the JWTAuth object
 
     Args:
@@ -47,6 +47,7 @@ def get_auth(settings, data, app_auth):
 
     Returns:
       a JWTAuth object
+
     """
     return JWTAuth(
         client_id=settings["clientID"],
@@ -58,7 +59,7 @@ def get_auth(settings, data, app_auth):
     )
 
 
-def get_json(filename):
+def get_json(filename: str) -> str:
     """Read a JSON file
 
     Args:
@@ -66,22 +67,21 @@ def get_json(filename):
 
     Returns:
       the data as a dictionary
+
     """
     with open(filename) as file_stream:
         return json.load(file_stream)
 
 
-@curry
-def upload_to_box(upload_file, folder_name, config_file):
+def upload_to_box(upload_file: UploadFile, folder_name: str) -> dict:
     """Upload a file to box
 
     Args:
       upload_file: an UploadFile object
       folder_name: the folder to dump the file to
-      config_file: the config file used to authenticate
 
     Returns:
-      the box file ID and the download URL
+      function to upload the box file ID and the download URL
 
     """
     return sequence(
@@ -89,12 +89,16 @@ def upload_to_box(upload_file, folder_name, config_file):
         juxt(get("boxAppSettings"), identity, get_in(["boxAppSettings", "appAuth"])),
         lambda x: get_auth(*x),
         Client,
+        # debug,
         lambda x: x.folder(folder_id="0"),
         lambda x: x.create_subfolder(folder_name),
         lambda x: x.upload_stream(upload_file.file, upload_file.filename),
         lambda x: dict(file_id=x.id, download_link=x.get_download_url()),
-    )(config_file)
+    )
 
+def debug(x):
+    import ipdb; ipdb.set_trace()
+    return x
 
 APP = FastAPI()  # pylint: disable=invalid-name
 
@@ -114,11 +118,11 @@ APP.add_middleware(
 )
 
 
-@APP.post("/files/")
-async def create_file_on_box(uuid_: UUID, fileb: UploadFile = File(...)):
+@APP.post("/upload/")
+async def upload(uid: UUID, fileb: UploadFile = File(...)) -> dict:
     """End point to upload files to box
     """
-    return upload_to_box(fileb, str(uuid_), CONFIG_FILE)
+    return upload_to_box(fileb, str(uid))(CONFIG_FILE)
 
 
 if __name__ == "__main__":
