@@ -18,9 +18,16 @@ from toolz.curried import curry, get, compose, get_in, juxt, identity
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, UploadFile
 from boxsdk import JWTAuth, Client
+import os
 
 
-CONFIG_FILE = "1014649_e91k0tua_config.json"
+def get_config_filename():
+    return pipe(
+        __file__,
+        os.path.abspath,
+        os.path.dirname,
+        lambda x: os.path.join(x, "1014649_e91k0tua_config.json")
+    )
 
 
 def sequence(*args):
@@ -89,16 +96,12 @@ def upload_to_box(upload_file: UploadFile, folder_name: str) -> dict:
         juxt(get("boxAppSettings"), identity, get_in(["boxAppSettings", "appAuth"])),
         lambda x: get_auth(*x),
         Client,
-        # debug,
         lambda x: x.folder(folder_id="0"),
         lambda x: x.create_subfolder(folder_name),
         lambda x: x.upload_stream(upload_file.file, upload_file.filename),
         lambda x: dict(file_id=x.id, download_link=x.get_download_url()),
     )
 
-def debug(x):
-    import ipdb; ipdb.set_trace()
-    return x
 
 APP = FastAPI()  # pylint: disable=invalid-name
 
@@ -122,7 +125,7 @@ APP.add_middleware(
 async def upload(uid: UUID, fileb: UploadFile = File(...)) -> dict:
     """End point to upload files to box
     """
-    return upload_to_box(fileb, str(uid))(CONFIG_FILE)
+    return upload_to_box(fileb, str(uid))(get_config_filename())
 
 
 if __name__ == "__main__":

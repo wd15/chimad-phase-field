@@ -2,7 +2,7 @@
 """
 
 from starlette.testclient import TestClient
-from toolz.curried import pipe
+from toolz.curried import pipe, curry
 from main import APP, get_auth, upload_to_box
 from unittest.mock import patch, Mock
 from fastapi import UploadFile
@@ -15,6 +15,7 @@ client = TestClient(APP)  # pylint: disable=invalid-name
 
 
 is_ = lambda x: (lambda y: x is y)
+equals = lambda x: (lambda y: x == y)
 
 @patch('main.JWTAuth')
 def test_auth(jwtauth):
@@ -46,21 +47,16 @@ class MockClient(Mock):
         return MockFolder()
 
 
+@curry
+def write_json(filename, data):
+    with open(filename, 'w') as f:
+        json.dump(data, f)
+    return filename
 
-@patch('main.JWTAuth', autospec=True)
-@patch('main.Client', new=MockClient)
-def test_upload_to_box(*args):
-    # mock_folder = Mock(name="mock_folder")
-    # mock_subfolder = Mock(name="mock_subfolder")
-    # mock_stream = Mock(name="mock_stream")
-    # mock_folder.create_subfolder.return_value = mock_subfolder
-    # mock_subfolder.upload_stream.return_value = mock_stream
-    # mock_stream.id.return_value = 0
-    # mock_stream.get_download_url.return_value = 'https://test.com/file'
-    # client.folder.return_value = mock_folder
 
-    with CliRunner().isolated_filesystem():
-        data = dict(
+def get_test_config():
+    return pipe(
+        dict(
             enterpriseID='test',
             boxAppSettings=dict(
                 clientID='test',
@@ -70,13 +66,29 @@ def test_upload_to_box(*args):
                     passphrase='test'
                 )
             )
-        )
-        print(data)
-        with open('config_file', 'w') as f:
-            json.dump(data, f)
-        out = upload_to_box(UploadFile('wow'), 'test')('config_file')
+        ),
+        write_json('test_config.json'),
+    )
 
-    import ipdb; ipdb.set_trace()
+
+@patch('main.JWTAuth', autospec=True)
+@patch('main.Client', new=MockClient)
+@patch('main.get_config_filename', new=get_test_config)
+def test_upload_to_box(*args):
+    with CliRunner().isolated_filesystem():
+        assert pipe(
+            get_test_config(),
+            upload_to_box(UploadFile('wow'), 'test'),
+            equals(dict(file_id=0, download_link='https://test.com'))
+        )
+
+
+@patch('main.JWTAuth', autospec=True)
+@patch('main.Client', new=MockClient)
+@patch('main.get_config_filename', new=get_test_config)
+def test_upload(*args):
+    with CliRunner().isolated_filesystem():
+
 
 
 if __name__ == '__main__':
