@@ -12,22 +12,24 @@ Todo:
  - test on heroku
 """
 
+import os
 import json
 from uuid import UUID
-from toolz.curried import curry, get, compose, get_in, juxt, identity
+from toolz.curried import get, compose, get_in, juxt, identity
 from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, UploadFile
 from boxsdk import JWTAuth, Client
-import os
+import uvicorn
 
 
 def get_config_filename():
-    return pipe(
-        __file__,
+    """Get the full path to the local config file
+    """
+    return sequence(
         os.path.abspath,
         os.path.dirname,
-        lambda x: os.path.join(x, "1014649_e91k0tua_config.json")
-    )
+        lambda x: os.path.join(x, "1014649_e91k0tua_config.json"),
+    )(__file__)
 
 
 def sequence(*args):
@@ -62,7 +64,7 @@ def get_auth(settings: dict, data: dict, app_auth: dict) -> JWTAuth:
         enterprise_id=data["enterpriseID"],
         jwt_key_id=app_auth["publicKeyID"],
         rsa_private_key_file_sys_path="./cert.pem",
-        rsa_private_key_passphrase=app_auth["passphrase"]
+        rsa_private_key_passphrase=app_auth["passphrase"],
     )
 
 
@@ -128,8 +130,5 @@ async def upload(uid: UUID, fileb: UploadFile = File(...)) -> dict:
     return upload_to_box(fileb, str(uid))(get_config_filename())
 
 
-if __name__ == "__main__":
-    # run with python main.py to debug
-    import uvicorn
-
+if __name__ == "__main__":  # pragma: no cover
     uvicorn.run(APP, host="0.0.0.0", port=8000)

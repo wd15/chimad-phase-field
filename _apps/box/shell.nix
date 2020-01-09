@@ -22,6 +22,7 @@ in
       flake8
       pytest
       keyring
+      pytestcov
     ];
 
     shellHook = ''
