@@ -23,6 +23,7 @@ in
       pytest
       keyring
       pytestcov
+      pkgs.google-cloud-sdk
     ];
 
     shellHook = ''

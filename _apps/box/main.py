@@ -105,10 +105,10 @@ def upload_to_box(upload_file: UploadFile, folder_name: str) -> dict:
     )
 
 
-APP = FastAPI()  # pylint: disable=invalid-name
+app = FastAPI()  # pylint: disable=invalid-name
 
 
-APP.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     # allow_origins=[
     #     "http://127.0.0.1:4000",
@@ -123,7 +123,7 @@ APP.add_middleware(
 )
 
 
-@APP.post("/upload/")
+@app.post("/upload/")
 async def upload(uid: UUID, fileb: UploadFile = File(...)) -> dict:
     """End point to upload files to box
     """
@@ -131,4 +131,4 @@ async def upload(uid: UUID, fileb: UploadFile = File(...)) -> dict:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    uvicorn.run(APP, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

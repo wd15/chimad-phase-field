@@ -12,10 +12,10 @@ from fastapi import UploadFile
 from click.testing import CliRunner
 from boxsdk import JWTAuth
 
-from main import APP, get_auth, upload_to_box, get_config_filename
+from main import app, get_auth, upload_to_box, get_config_filename
 
 
-client = TestClient(APP)  # pylint: disable=invalid-name
+client = TestClient(app)  # pylint: disable=invalid-name
 
 
 is_ = lambda x: (lambda y: x is y)  # pylint: disable=invalid-name
