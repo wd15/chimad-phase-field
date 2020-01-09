@@ -51,3 +51,10 @@ script:
       pylint *.py &&
       flake8 *.py
     ";
+  - nix-shell _apps/box/shell.nix --pure --command "
+      cd _apps/box &&
+      py.test &&
+      black --check *.py &&
+      pylint *.py &&
+      flake8 *.py
+    ";
