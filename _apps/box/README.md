@@ -16,6 +16,6 @@ Test with
 
 and
 
-    $ glcoud app logs tail -s default
+    $ gcloud app logs tail -s default
 
 to observe the logs once deployed.

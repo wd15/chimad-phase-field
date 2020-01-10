@@ -36,8 +36,7 @@ in
       export PYTHONPATH=$PYTHONPATH:$USER_SITE
       export PATH=$PATH:$PYTHONUSERBASE/bin
 
-      pip install --user boxsdk
-      pip install --user "boxsdk[jwt]"
-      pip install --user "python-multipart"
+      pip install --user "boxsdk[jwt]==2.6.1"
+      pip install --user "python-multipart==0.0.5"
     '';
   }

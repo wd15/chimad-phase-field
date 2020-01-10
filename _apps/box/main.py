@@ -6,6 +6,9 @@ Test with
 
   curl -X "POST" -F "fileb=@./shell.nix" http://localhost:8000/upload/?uid=$(uuidgen)
 
+or on the app with
+
+  curl -X "POST" -F "fileb=@./shell.nix" https://pfhub-box.appspot.com/upload/?uid=$(uuidgen)
 Todo:
 
  - set up test cases
