@@ -117,6 +117,10 @@ $('#my_form').submit(
     )
 )
 
+##############################
+## 2D versus 3D data selection
+# ############################
+
 get_tags = (thiss) ->
   f = (x) ->
     ['#input-field-z-' + x,
@@ -127,6 +131,7 @@ get_tags = (thiss) ->
 
 $('#data-files').on('click', '.dim-line',
   () ->
+    console.log('wow')
     [div_tag, input_tag, field_class] = get_tags(this)
     $(div_tag).attr('hidden', '')
     $(input_tag).removeAttr('required')
@@ -143,6 +148,41 @@ $('#data-files').on('click', '.dim-contour',
   () ->
     add_contour(this)
 )
+
+
+########################################
+## Upload versus link data radio buttons
+########################################
+
+get_tags_upload = (counter) ->
+  (type) ->
+    ['#data-' + type + '-div-' + counter,
+     '#data-' + type + '-input-' + counter]
+
+switch_ = (tag1, tag2, attr) ->
+  $(tag1).attr(attr, '')
+  $(tag2).removeAttr(attr)
+
+swap = (counter, x, y) ->
+  get_tags_count = get_tags_upload(counter)
+  [div_x_tag, input_x_tag] = get_tags_count(x)
+  [div_y_tag, input_y_tag] = get_tags_count(y)
+  switch_(div_y_tag, div_x_tag, 'hidden')
+  switch_(input_x_tag, input_y_tag, 'required')
+
+
+$('#data-files').on('click', '.data-link',
+  () ->
+    swap(this.id.split('-')[2], 'link', 'upload')
+)
+
+
+$('#data-files').on('click', '.data-upload',
+  () ->
+    swap(this.id.split('-')[2], 'upload', 'link')
+)
+
+#########################################
 
 
 get_field_name = (datum, field) ->
@@ -167,7 +207,7 @@ populate_media = (datum) ->
 populate_data = (datum) ->
   counter = add_data_file_section()
   $('#data-name-' + counter).val(datum.name)
-  $('#data-url-' + counter).val(datum.url)
+  $('#data-link-input-' + counter).val(datum.url)
   $('#data-desc-' + counter).val(datum.description)
   if datum.format? and datum.format.type == 'json'
     $('#json-' + counter).attr('checked', '')
